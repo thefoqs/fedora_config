@@ -7,7 +7,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Set PATH
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Dialog dimensions
 HEIGHT=20
@@ -15,7 +15,7 @@ WIDTH=90
 CHOICE_HEIGHT=10
 
 # Titles and messages
-BACKTITLE="Fedorable v2.0 - A Fedora Post Install Setup Util for GNOME - By Smittix - https://smittix.net"
+BACKTITLE="Fedora_config v1.0 - A Fedora Post Install Setup Util for GNOME - Forked from https://github.com/smittix/fedorable"
 TITLE="Please Make a Selection"
 MENU="Please Choose one of the following options:"
 
@@ -42,8 +42,8 @@ OPTIONS=(
     3 "Speed up DNF - Sets max parallel downloads to 10"
     4 "Enable Flathub - Enables FlatHub & installs packages located in flatpak-packages.txt"
     5 "Install Software - Installs software located in dnf-packages.txt"
-    6 "Install Oh-My-ZSH - Installs Oh-My-ZSH & Starship Prompt"
-    7 "Install Extras - Themes, Fonts, and Codecs"
+    6 "Install Oh-My-ZSH - Installs Oh-My-ZSH"
+    7 "Install Codecs"
     8 "Install Nvidia - Install akmod Nvidia drivers"
     9 "Customise - Configures system settings"
     10 "Quit"
@@ -114,12 +114,10 @@ install_software() {
 
 # Function to install Oh-My-Zsh and Starship
 install_oh_my_zsh() {
-    echo "Installing Oh-My-Zsh with Starship"
+    echo "Installing Oh-My-Zsh"
     sudo dnf install -y zsh curl util-linux-user
     sudo -u "$SUDO_USER" sh -c "$(curl -fsSL $OH_MY_ZSH_URL)" "" --unattended
     sudo -u "$SUDO_USER" chsh -s "$(which zsh)"
-    sudo -u "$SUDO_USER" curl -sS https://starship.rs/install.sh | sh
-    sudo -u "$SUDO_USER" echo 'eval "$(starship init zsh)"' >> ~/.zshrc
     notify "Oh-My-Zsh is ready to rock n roll"
 }
 
@@ -134,10 +132,6 @@ install_extras() {
     sudo dnf group upgrade -y --with-optional Multimedia
     sudo dnf config-manager --set-enabled fedora-cisco-openh264
     sudo dnf install -y gstreamer1-plugin-openh264 mozilla-openh264
-    sudo dnf copr enable peterwu/iosevka -y
-    sudo dnf update -y
-    sudo dnf install -y iosevka-term-fonts jetbrains-mono-fonts-all terminus-fonts terminus-fonts-console google-noto-fonts-common fira-code-fonts cabextract xorg-x11-font-utils fontconfig
-    sudo rpm -i https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm
     notify "All done"
 }
 
@@ -158,51 +152,6 @@ set_hostname() {
     else
         dialog --msgbox "Hostname not set. Input was empty." 10 50
     fi
-}
-
-# Function to setup custom fonts
-setup_fonts() {
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans Regular 10'
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.interface font-name 'Noto Sans Regular 10'
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 10'
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.wm.preferences titlebar-font 'Noto Sans Regular 10'
-    dialog --msgbox "Custom fonts have been set." 10 50
-}
-
-# Function to customize the clock
-customize_clock() {
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.interface clock-format '24h'
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.interface clock-show-date true
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.interface clock-show-seconds false
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.interface clock-show-weekday false
-    dialog --msgbox "Clock has been customized." 10 50
-}
-
-# Function to enable window buttons
-enable_window_buttons() {
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
-    dialog --msgbox "Window buttons (minimize, maximize, close) have been enabled." 10 50
-}
-
-# Function to center windows
-center_windows() {
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.mutter center-new-windows true
-    dialog --msgbox "Windows will now be centered." 10 50
-}
-
-# Function to disable auto-maximize
-disable_auto_maximize() {
-    sudo -u "$SUDO_USER" dbus-launch gsettings set org.gnome.mutter auto-maximize false
-    dialog --msgbox "Auto-maximize has been disabled." 10 50
-}
-
-# Function to perform all customization tasks
-perform_all() {
-    setup_fonts
-    customize_clock
-    enable_window_buttons
-    center_windows
-    disable_auto_maximize
 }
 
 # Main loop
@@ -227,31 +176,19 @@ while true; do
         6) install_oh_my_zsh ;;
         7) install_extras ;;
         8) install_nvidia ;;
-        9) 
+        9)
             # Customization menu
             while true; do
                 CUSTOM_CHOICE=$(dialog --clear --backtitle "Fedora System Configuration" \
                     --title "Customization Menu" \
                     --menu "Choose an option:" 15 50 8 \
                     1 "Set Hostname" \
-                    2 "Setup Custom Fonts" \
-                    3 "Customize Clock" \
-                    4 "Enable Window Buttons" \
-                    5 "Center Windows" \
-                    6 "Disable Auto-Maximize" \
-                    7 "Perform All Tasks" \
-                    8 "Exit" \
+                    2 "Exit" \
                     3>&1 1>&2 2>&3)
-                
+
                 case $CUSTOM_CHOICE in
                     1) set_hostname ;;
-                    2) setup_fonts ;;
-                    3) customize_clock ;;
-                    4) enable_window_buttons ;;
-                    5) center_windows ;;
-                    6) disable_auto_maximize ;;
-                    7) perform_all ;;
-                    8) break ;;
+                    2) break ;;
                     *) dialog --msgbox "Invalid option. Please try again." 10 50 ;;
                 esac
             done
@@ -260,4 +197,3 @@ while true; do
         *) log_action "Invalid option selected: $CHOICE";;
     esac
 done
-
